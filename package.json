@@ -1,14 +1,18 @@
 {
+  "name": "aura-ai-assistant",
+  "private": true,
+  "version": "0.1.0",
   "main": "dist-electron/main.js",
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
-    "electron:build": "tsc -p electron/tsconfig.json", 
-    "electron:dev": "concurrently -k \"cross-env BROWSER=none npm run dev\" \"wait-on http://localhost:3000 && npm run electron:build && electron .\"",
+    "electron:build": "tsc -p electron/tsconfig.json",
+    "electron:dev": "concurrently -k \"cross-env BROWSER=none npm run dev\" \"wait-on http://localhost:3000 && npm run electron:build && cross-env ELECTRON_START_URL=http://localhost:3000 electron .\"",
     "dist": "npm run build && npm run electron:build && electron-builder"
   },
   "dependencies": {
     "@google/genai": "^1.34.0",
+    "loudness": "^0.4.2",
     "react": "^19.2.3",
     "react-dom": "^19.2.3"
   },
@@ -17,12 +21,25 @@
     "@vitejs/plugin-react": "^5.0.0",
     "concurrently": "^9.2.1",
     "cross-env": "^10.1.0",
-    "electron": "^39.2.7",
+    "electron": "^33.2.1",
     "electron-builder": "^26.0.12",
     "typescript": "~5.8.2",
     "vite": "^6.2.0",
     "wait-on": "^9.0.3"
+  },
+  "build": {
+    "appId": "com.willbiocloud.aura",
+    "productName": "Aura AI",
+    "win": {
+      "target": "nsis",
+      "icon": "public/icon.ico"
+    },
+    "files": [
+      "dist/**/*",
+      "dist-electron/**/*"
+    ],
+    "directories": {
+      "output": "release"
+    }
   }
-
-  
 }

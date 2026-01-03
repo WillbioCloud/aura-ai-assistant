@@ -9,14 +9,37 @@ interface SettingsPanelProps {
 
 export const SettingsPanel: React.FC<SettingsPanelProps> = ({ settings, onUpdate, onClose }) => {
   const [voices, setVoices] = useState<SpeechSynthesisVoice[]>([]);
+  const [microphones, setMicrophones] = useState<MediaDeviceInfo[]>([]);
+  const [speakers, setSpeakers] = useState<MediaDeviceInfo[]>([]);
 
+  // Carrega Vozes e Dispositivos
   useEffect(() => {
+    // 1. Carregar Vozes TTS
     const loadVoices = () => {
       const avail = window.speechSynthesis.getVoices();
       setVoices(avail);
     };
     loadVoices();
     window.speechSynthesis.onvoiceschanged = loadVoices;
+
+    // 2. Carregar Dispositivos de Áudio (Mic e Falantes)
+    const loadDevices = async () => {
+      try {
+        // Pede permissão temporária para listar labels corretamente
+        await navigator.mediaDevices.getUserMedia({ audio: true });
+        
+        const devices = await navigator.mediaDevices.enumerateDevices();
+        
+        const mics = devices.filter(d => d.kind === 'audioinput');
+        const spks = devices.filter(d => d.kind === 'audiooutput');
+        
+        setMicrophones(mics);
+        setSpeakers(spks);
+      } catch (e) {
+        console.error("Erro ao listar dispositivos:", e);
+      }
+    };
+    loadDevices();
   }, []);
 
   const handleChange = (section: keyof AssistantSettings, key: string, value: any) => {
@@ -30,7 +53,7 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({ settings, onUpdate
   };
 
   return (
-    <div className="absolute inset-0 bg-slate-900/95 backdrop-blur-md z-50 p-8 overflow-y-auto flex flex-col">
+    <div className="absolute inset-0 bg-slate-900/95 backdrop-blur-md z-50 p-8 overflow-y-auto flex flex-col select-none">
       <div className="flex justify-between items-center mb-8">
         <h2 className="text-2xl font-light text-white">Configurações da Aura</h2>
         <button onClick={onClose} className="text-slate-400 hover:text-white transition">
@@ -40,7 +63,7 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({ settings, onUpdate
         </button>
       </div>
 
-      <div className="space-y-8 max-w-2xl mx-auto w-full">
+      <div className="space-y-8 max-w-2xl mx-auto w-full pb-10">
         
         {/* Personality Section */}
         <section>
@@ -93,12 +116,32 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({ settings, onUpdate
           </div>
         </section>
 
-        {/* Voice Section */}
+        {/* Voice & Audio Hardware Section */}
         <section>
-          <h3 className="text-purple-400 uppercase tracking-widest text-sm mb-4">Voz & Áudio</h3>
+          <h3 className="text-purple-400 uppercase tracking-widest text-sm mb-4">Voz & Dispositivos</h3>
           <div className="space-y-4">
+             
+             {/* Microfone */}
              <div>
-                 <label className="block text-slate-300 mb-2 text-sm">Voz do Sistema</label>
+                 <label className="block text-slate-300 mb-2 text-sm flex items-center gap-2">
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" /></svg>
+                    Microfone de Entrada
+                 </label>
+                 <select 
+                    value={settings.voice.selectedMicrophoneId || ''}
+                    onChange={(e) => handleChange('voice', 'selectedMicrophoneId', e.target.value)}
+                    className="w-full bg-slate-800 border border-slate-700 rounded px-3 py-2 text-white focus:outline-none focus:border-purple-500"
+                 >
+                   <option value="">Padrão do Sistema</option>
+                   {microphones.map(m => (
+                     <option key={m.deviceId} value={m.deviceId}>{m.label || `Microfone ${m.deviceId.slice(0,5)}...`}</option>
+                   ))}
+                 </select>
+             </div>
+
+             {/* Voz TTS */}
+             <div>
+                 <label className="block text-slate-300 mb-2 text-sm">Voz da Aura</label>
                  <select 
                     value={settings.voice.selectedVoiceURI || ''}
                     onChange={(e) => handleChange('voice', 'selectedVoiceURI', e.target.value)}
@@ -109,6 +152,7 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({ settings, onUpdate
                    ))}
                  </select>
             </div>
+
             <div className="grid grid-cols-2 gap-4">
                <div>
                   <label className="block text-slate-300 mb-2 text-sm">Velocidade ({settings.voice.rate}x)</label>

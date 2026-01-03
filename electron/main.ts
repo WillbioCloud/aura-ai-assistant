@@ -1,60 +1,83 @@
-import { app, BrowserWindow, ipcMain, shell } from 'electron';
+import { app, BrowserWindow, ipcMain, session } from 'electron';
 import path from 'path';
 import { exec } from 'child_process';
+import loudness from 'loudness';
 
-// Impede que o app feche quando a janela fecha (mantém na bandeja/background)
+// Adiciona flags para evitar bloqueios de autotocar e mídia
+app.commandLine.appendSwitch('autoplay-policy', 'no-user-gesture-required');
+app.commandLine.appendSwitch('enable-speech-dispatcher'); 
+
 let mainWindow: BrowserWindow | null = null;
 
 function createWindow() {
   mainWindow = new BrowserWindow({
     width: 1200,
     height: 800,
-    frame: false, // Deixa sem bordas (estilo futurista)
-    transparent: true, // Se quiser fundo transparente
+    frame: false,
+    transparent: true,
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
       nodeIntegration: false,
       contextIsolation: true,
-      backgroundThrottling: false, // IMPORTANTE: Permite que a IA ouça mesmo minimizada
+      backgroundThrottling: false, // Vital para ouvir em background
     },
   });
 
-  // Em desenvolvimento carrega a URL do Vite, em produção carrega o arquivo
-  const startUrl = process.env.ELECTRON_START_URL || `file://${path.join(__dirname, '../dist/index.html')}`;
+  // --- PERMISSÃO AUTOMÁTICA DE MICROFONE ---
+  session.defaultSession.setPermissionRequestHandler((webContents, permission, callback) => {
+    const allowedPermissions = ['media', 'audioCapture', 'notifications', 'mediaKeySystem'];
+    if (allowedPermissions.includes(permission)) {
+      callback(true); // Aprova automaticamente
+    } else {
+      callback(false);
+    }
+  });
+
+  // Garante que erros de permissão sejam logados
+  session.defaultSession.setPermissionCheckHandler((webContents, permission) => {
+    return true; // Força retorno positivo na checagem
+  });
+
+  const startUrl = process.env.ELECTRON_START_URL || 
+    (app.isPackaged 
+      ? `file://${path.join(__dirname, '../dist/index.html')}` 
+      : 'http://localhost:3000');
+
   mainWindow.loadURL(startUrl);
 }
 
 app.whenReady().then(() => {
   createWindow();
 
-  // --- COMANDOS DO SISTEMA (Aura Control) ---
-  
-  ipcMain.on('system-command', (event, command) => {
-    console.log('Comando recebido:', command);
+  ipcMain.on('window-minimize', () => mainWindow?.minimize());
+  ipcMain.on('window-maximize', () => {
+    if (mainWindow?.isMaximized()) mainWindow.unmaximize();
+    else mainWindow?.maximize();
+  });
+  ipcMain.on('window-close', () => mainWindow?.close());
 
+  ipcMain.on('system-command', async (event, command) => {
+    console.log('Comando recebido:', command);
     switch (command.action) {
       case 'OPEN_APP':
-        // No Windows, usa 'start' para abrir
         exec(`start ${command.value}`, (error) => {
           if (error) console.error(`Erro ao abrir app: ${error}`);
         });
         break;
-
       case 'VOLUME':
-        // Ajuste de volume via PowerShell (exemplo simples)
-        // Existem bibliotecas npm como 'loudness' que facilitam isso
-        // Aqui simula um mute/unmute ou volume fixo
-        if (command.value === 'mute') {
-           // Comando powershell para mutar
-           exec('powershell -c "(New-Object -ComObject WScript.Shell).SendKeys([char]173)"');
-        } else {
-           // Implementar lógica complexa de volume aqui
-           console.log("Ajustar volume para: " + command.value);
+        try {
+          if (command.value === 'mute') {
+             const muted = await loudness.getMuted();
+             await loudness.setMuted(!muted);
+          } else {
+             const vol = Math.round(parseFloat(command.value) * 100);
+             await loudness.setVolume(vol);
+          }
+        } catch (e) {
+          console.error("Erro no volume:", e);
         }
         break;
-
       case 'SHOW_DESKTOP':
-        // Minimiza tudo (Win + D ou comando shell)
         exec('powershell -command "(new-object -com shell.application).minimizeall()"');
         break;
     }
@@ -62,7 +85,5 @@ app.whenReady().then(() => {
 });
 
 app.on('window-all-closed', () => {
-  if (process.platform !== 'darwin') {
-    app.quit();
-  }
+  if (process.platform !== 'darwin') app.quit();
 });

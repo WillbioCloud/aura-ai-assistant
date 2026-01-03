@@ -44,7 +44,7 @@ export const generateResponse = async (
     + "\nSe o usuário pedir para abrir um programa, ajustar volume ou mostrar a área de trabalho, USE a ferramenta controlSystem. Não apenas diga que vai fazer, faça a chamada da função.";
 
   try {
-    const model = 'gemini-3-flash-preview'; 
+    const model = 'gemini-flash-latest'; 
     
     // Tools configuration
     const tools: Tool[] = [

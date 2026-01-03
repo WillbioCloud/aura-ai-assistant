@@ -1,23 +1,25 @@
 export enum AppState {
   IDLE = 'IDLE',
-  PASSIVE_LISTENING = 'PASSIVE_LISTENING', // Waiting for wake word
-  LISTENING = 'LISTENING', // Active interacting
+  PASSIVE_LISTENING = 'PASSIVE_LISTENING',
+  LISTENING = 'LISTENING',
   PROCESSING = 'PROCESSING',
   SPEAKING = 'SPEAKING',
 }
 
 export interface AssistantSettings {
   personality: {
-    seriousness: number; // 0-100
-    humor: number; // 0-100
+    seriousness: number;
+    humor: number;
     style: 'formal' | 'casual' | 'technical';
     verbosity: 'concise' | 'balanced' | 'detailed';
   };
   voice: {
-    pitch: number; // 0.5 - 2
-    rate: number; // 0.5 - 2
-    volume: number; // 0 - 1
+    pitch: number;
+    rate: number;
+    volume: number;
     selectedVoiceURI: string | null;
+    selectedMicrophoneId: string | null; // NOVO
+    selectedSpeakerId: string | null;    // NOVO
   };
   behavior: {
     autoSearch: boolean;
@@ -48,11 +50,13 @@ export interface ChatResponse {
   systemCommand?: SystemCommand;
 }
 
-// Adicione isso no topo ou num arquivo de declaração .d.ts
 declare global {
   interface Window {
     electronAPI: {
       sendCommand: (command: any) => void;
+      minimize: () => void;
+      maximize: () => void;
+      close: () => void;
     };
   }
 }

@@ -9,9 +9,11 @@ export const DEFAULT_SETTINGS: AssistantSettings = {
   },
   voice: {
     pitch: 1,
-    rate: 1.1, // Slightly faster is often preferred for AI
+    rate: 1.1,
     volume: 1,
     selectedVoiceURI: null,
+    selectedMicrophoneId: null, // NOVO
+    selectedSpeakerId: null,    // NOVO
   },
   behavior: {
     autoSearch: true,
