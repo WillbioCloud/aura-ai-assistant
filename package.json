@@ -41,5 +41,18 @@
     "directories": {
       "output": "release"
     }
-  }
+  },
+  "description": "<div align=\"center\"> <img width=\"1200\" height=\"475\" alt=\"GHBanner\" src=\"https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6\" /> </div>",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/WillbioCloud/aura-ai-assistant.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/WillbioCloud/aura-ai-assistant/issues"
+  },
+  "homepage": "https://github.com/WillbioCloud/aura-ai-assistant#readme"
 }
