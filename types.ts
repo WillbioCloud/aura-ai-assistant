@@ -47,3 +47,12 @@ export interface ChatResponse {
   searchResults?: SearchResult[];
   systemCommand?: SystemCommand;
 }
+
+// Adicione isso no topo ou num arquivo de declaração .d.ts
+declare global {
+  interface Window {
+    electronAPI: {
+      sendCommand: (command: any) => void;
+    };
+  }
+}

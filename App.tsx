@@ -169,16 +169,22 @@ const App: React.FC = () => {
   };
 
   const executeSystemCommand = (cmd: SystemCommand) => {
-    // In a real Electron app, this would use window.electronAPI.send('command', cmd)
     console.log("EXECUTING SYSTEM COMMAND:", cmd);
     
+    // Envia para o processo principal do Electron
+    if (window.electronAPI) {
+        window.electronAPI.sendCommand(cmd);
+    } else {
+        console.warn("Electron API não detectada. Rodando no navegador?");
+    }
+    
+    // UI Notification (mantém o que você já fez)
     let notifyText = "";
     switch(cmd.action) {
       case 'OPEN_APP': notifyText = `Abrindo ${cmd.value || 'aplicativo'}...`; break;
       case 'VOLUME': notifyText = `Volume: ${cmd.value}`; break;
       case 'SHOW_DESKTOP': notifyText = "Minimizando janelas..."; break;
     }
-    
     setSystemNotification(notifyText);
     setTimeout(() => setSystemNotification(null), 3000);
   };
