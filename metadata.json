@@ -1,0 +1,7 @@
+{
+  "name": "Aura AI Assistant",
+  "description": "A minimalist, voice-activated personal AI assistant with real-time internet search and a responsive visual interface.",
+  "requestFramePermissions": [
+    "microphone"
+  ]
+}
