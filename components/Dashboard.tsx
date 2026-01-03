@@ -3,7 +3,8 @@ import { Orb } from './Orb';
 import { SettingsPanel } from './SettingsPanel';
 import { AppState, AssistantSettings, ChatMessage, SystemCommand } from '../types';
 import { DEFAULT_SETTINGS } from '../constants';
-import { generateResponse } from '../services/geminiService';
+// ALTERAÇÃO 1: Importamos o serviço local em vez do geminiService
+import { generateResponseLocal } from '../services/ollamaService'; 
 
 interface IWindow extends Window {
   webkitSpeechRecognition: any;
@@ -22,7 +23,7 @@ export const Dashboard: React.FC = () => {
   const [audioLevel, setAudioLevel] = useState(0);
   const [systemNotification, setSystemNotification] = useState<string | null>(null);
   
-  // --- NOVO: Debug Logs ---
+  // Debug Logs
   const [statusLog, setStatusLog] = useState<string>("Iniciando sistema...");
   const [errorLog, setErrorLog] = useState<string>("");
 
@@ -67,7 +68,7 @@ export const Dashboard: React.FC = () => {
       
       if (fullText) {
           setTranscribedText(fullText);
-          setStatusLog(`Detectado: "${fullText}"`); // Mostra o que ouviu
+          setStatusLog(`Detectado: "${fullText}"`);
       }
 
       // Wake Word
@@ -119,14 +120,15 @@ export const Dashboard: React.FC = () => {
     
     setAppState(AppState.PROCESSING);
     setTranscribedText(text);
-    setStatusLog("Processando resposta...");
+    setStatusLog("Processando resposta (Local)..."); // Pequena mudança visual para você saber que é local
 
     const cleanText = text.replace(WAKE_WORD_REGEX, '').trim() || text;
     const newUserMsg: ChatMessage = { role: 'user', text: cleanText, timestamp: Date.now() };
     setMessages(prev => [...prev, newUserMsg]);
 
     try {
-        const result = await generateResponse(messages, cleanText, settings);
+        // ALTERAÇÃO 2: Chamada ao serviço local (Ollama)
+        const result = await generateResponseLocal(messages, cleanText, settings);
         
         if (result.systemCommand) executeSystemCommand(result.systemCommand);
 
@@ -141,8 +143,8 @@ export const Dashboard: React.FC = () => {
 
     } catch (error: any) {
         setAppState(AppState.IDLE);
-        setSystemNotification("Erro IA");
-        setErrorLog(`Erro Gemini: ${error.message}`);
+        setSystemNotification("Erro IA Local");
+        setErrorLog(`Erro Ollama: ${error.message}`);
     }
   };
 
@@ -199,7 +201,7 @@ export const Dashboard: React.FC = () => {
     setTimeout(() => synthesisRef.current.speak(utterance), 100);
   }, [settings]);
 
-  // Visualizador (Mantido igual)
+  // Visualizador de Áudio
   useEffect(() => {
     let audioContext: AudioContext;
     let analyser: AnalyserNode;
